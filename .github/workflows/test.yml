@@ -21,12 +21,24 @@ jobs:
           name: etl-components-zip
           path: build/distributions/*.zip
 
-      # Step 3: Build OCI Image using Kaniko (No Push)
-      # For enterprise use, replace --no-push with your registry destination
+      # 2. Build OCI Image with Kaniko (No Push)
+      # We use the official executor to avoid "password variable" errors
       - name: Build OCI Image with Kaniko
-        uses: aevea/action-kaniko@master
+        run: |
+          docker run \
+            -v $(pwd):/workspace \
+            gcr.io/kaniko-project/executor:latest \
+            --dockerfile /workspace/Dockerfile \
+            --context dir:///workspace \
+            --no-push \
+            --tar-path /workspace/etl-image.tar \
+            --destination local-build:latest
+
+      # 3. Upload Outputs (ZIP and the OCI Image TAR)
+      - name: Upload Build Outputs
+        uses: actions/upload-artifact@v4
         with:
-          image: etl-component
-          tag: latest
-          # Satisfy the internal validation even with --no-push
-          password: ${{ secrets.GITHUB_TOKEN }}
+          name: etl-build-package
+          path: |
+            build/distributions/*.zip
+            etl-image.tar
