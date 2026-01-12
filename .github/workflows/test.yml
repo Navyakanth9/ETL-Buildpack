@@ -24,23 +24,31 @@ jobs:
       - name: Build Artifacts (Zip/Tar)
         run: ./gradlew assemble
     
-     # 3. Build OCI Image using your Custom Scripts (Buildah)
-      - name: Build OCI Image
-        id: build-image
-        uses: redhat-actions/buildah-build@v2
-        with:
-          image: etl-component
-          tags: latest ${{ github.sha }}
-          # Use the fully qualified public URL
-          base-image: registry.access.redhat.com/ubi8/ubi:latest
-          content: |
-            . /workspace
-          entrypoint: |
-            /bin/ksh
-            /workspace/bin/sample_etl.ksh
-          workdir: /workspace
-          extra-args: |
-            --run "chmod +x /workspace/bin/detect /workspace/bin/build"
-            --run "/workspace/bin/detect"
-            --run "/workspace/bin/build"
+      # 3. Build OCI Image (Step-by-Step without Dockerfile)
+      - name: Build OCI Image with Buildah
+        run: |
+          # 1. Initialize container from Red Hat UBI
+          container=$(buildah from registry.access.redhat.com)
+          
+          # 2. Copy source into the container
+          buildah copy "$container" . /workspace
+          buildah config --workingdir /workspace "$container"
+          
+          # 3. Execute Buildpack logic (Separate RUN commands)
+          buildah run "$container" chmod +x bin/detect bin/build
+          buildah run "$container" ./bin/detect
+          buildah run "$container" ./bin/build
+          
+          # 4. Set Runtime Configuration
+          buildah config --entrypoint '["/bin/ksh", "/workspace/bin/sample_etl.ksh"]' "$container"
+          
+          # 5. Commit to a permanent image
+          buildah commit "$container" etl-component:latest
+          echo "Image built successfully: etl-component:latest"
 
+      # 4. Upload Outputs
+      - name: Upload ZIP Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: etl-zip-package
+          path: build/distributions/*.zip
