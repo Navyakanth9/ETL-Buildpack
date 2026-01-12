@@ -30,4 +30,3 @@ jobs:
           tag: latest
           # Satisfy the internal validation even with --no-push
           password: ${{ secrets.GITHUB_TOKEN }}
-          extra_args: "--no-push --cache=true"
