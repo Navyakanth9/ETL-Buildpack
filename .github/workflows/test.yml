@@ -15,6 +15,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'  # Automatically caches dependencies for speed
+       
+      # NEW STEP: Generates the missing gradlew file on the runner
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper    
 
       # 2. Test Artifact Creation
       - name: Build Artifacts (Zip/Tar)
