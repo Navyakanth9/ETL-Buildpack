@@ -23,8 +23,28 @@ jobs:
       # 2. Test Artifact Creation
       - name: Build Artifacts (Zip/Tar)
         run: ./gradlew assemble
-
-      # 3. Simulate "Pack" Build (Using Docker as the Builder)
+    
+     # 3. Build OCI Image using your Custom Scripts (Buildah)
+      - name: Build OCI Image with Buildah
+        run: |
+          # Start a new container from a Red Hat UBI base
+          container=$(buildah from registry.access.redhat.com)
+          
+          # Copy your source code into the temporary container
+          buildah copy "$container" . /workspace
+          buildah config --workingdir /workspace "$container"
+          
+          # Execute your custom Buildpack logic inside the container
+          buildah run "$container" -- chmod +x bin/detect bin/build
+          buildah run "$container" -- ./bin/detect
+          buildah run "$container" -- ./bin/build
+          
+          # Set the runtime configuration (Entrypoint for Ab Initio)
+          buildah config --entrypoint '["/bin/ksh", "./bin/sample_etl.ksh"]' "$container"
+          
+          # Commit the changes to a new image name
+          buildah commit "$container" etl-component:latest
+      # 4. Simulate "Pack" Build (Using Docker as the Builder)
       - name: Build OCI Image
         run: |
           docker build -t test-etl-image:latest .
