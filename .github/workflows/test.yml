@@ -1,0 +1,27 @@
+name: Test Buildpack CI
+on: [push, pull_request]
+
+jobs:
+  test-buildpack:
+    runs-on: ubuntu-latest  # Uses GitHub-hosted runner with Docker pre-installed
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Setup Java for Gradle (if your ETL requires specific Java versions)
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'  # Automatically caches dependencies for speed
+
+      # 2. Test Artifact Creation
+      - name: Build Artifacts (Zip/Tar)
+        run: ./gradlew assemble
+
+      # 3. Simulate "Pack" Build (Using Docker as the Builder)
+      - name: Build OCI Image
+        run: |
+          docker build -t test-etl-image:latest .
+          docker run --rm test-etl-image:latest  # Runs your ENTRYPOINT to verify
