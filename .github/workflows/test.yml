@@ -28,4 +28,6 @@ jobs:
         with:
           image: etl-component
           tag: latest
-          extra_args: "--no-push --cache=true" # Enable caching for speed
+          # Satisfy the internal validation even with --no-push
+          password: ${{ secrets.GITHUB_TOKEN }}
+          extra_args: "--no-push --cache=true"
