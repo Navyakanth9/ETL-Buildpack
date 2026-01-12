@@ -1,0 +1,8 @@
+#!/bin/bash
+# Check if this project has Ab Initio graph files (.mp)
+if ls *.mp >/dev/null 2>&1; then
+  echo "Ab Initio Project Detected"
+  exit 0
+else
+  exit 100
+fi

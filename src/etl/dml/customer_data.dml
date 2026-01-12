@@ -1,0 +1,7 @@
+record
+  decimal(10) customer_id;
+  string("|") first_name;
+  string("|") last_name;
+  datetime("YYYY-MM-DD") signup_date;
+  string("\n") end_of_record;
+end;

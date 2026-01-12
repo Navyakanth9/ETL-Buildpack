@@ -1,0 +1,7 @@
+out :: reformat(in) =
+begin
+  out.customer_id :: in.customer_id;
+  out.first_name  :: string_upcase(in.first_name);
+  out.last_name   :: string_upcase(in.last_name);
+  out.*           :: in.*;
+end;

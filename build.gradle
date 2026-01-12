@@ -1,0 +1,8 @@
+plugins { id 'distribution' }
+distributions {
+    main {
+        contents { from 'src/etl' }
+    }
+}
+// Gradle task to create the zip/tar
+// Run via ./gradlew assemble

@@ -1,0 +1,8 @@
+api = "0.10"
+[buildpack]
+id = "enterprise/abinitio-etl"
+version = "1.0.0"
+name = "Ab Initio ETL Buildpack"
+
+[[stacks]]
+id = "io.buildpacks.stacks.jammy" # Or your enterprise base image
