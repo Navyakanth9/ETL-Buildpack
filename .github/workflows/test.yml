@@ -4,6 +4,10 @@ on: [push]
 jobs:
   build-and-package:
     runs-on: ubuntu-latest
+    # Define a container to run the build directly in Kaniko
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      options: --user root
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -23,22 +27,19 @@ jobs:
 
       # 2. Build OCI Image with Kaniko (No Push)
       # We use the official executor to avoid "password variable" errors
-      - name: Build OCI Image with Kaniko
+      - name: Build OCI Image (No Push)
         run: |
-          docker run \
-            -v $(pwd):/workspace \
-            gcr.io/kaniko-project/executor:latest \
-            --dockerfile /workspace/Dockerfile \
-            --context dir:///workspace \
+          /kaniko/executor \
+            --context "${{ github.workspace }}" \
+            --dockerfile "${{ github.workspace }}/Dockerfile" \
             --no-push \
-            --tar-path /workspace/etl-image.tar \
-            --destination local-build:latest
+            --tar-path "${{ github.workspace }}/etl-image.tar" \
+            --destination "etl-component:latest" \
+            --skip-tls-verify-pull
 
-      # 3. Upload Outputs (ZIP and the OCI Image TAR)
-      - name: Upload Build Outputs
+      # 2. Upload the built Image TAR for download
+      - name: Upload Image Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: etl-build-package
-          path: |
-            build/distributions/*.zip
-            etl-image.tar
+          name: etl-container-image
+          path: etl-image.tar
