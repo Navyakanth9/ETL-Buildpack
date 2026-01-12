@@ -1,54 +1,31 @@
-name: Test Buildpack CI
-on: [push, pull_request]
+name: Enterprise ETL Build (Kaniko)
+on: [push]
 
 jobs:
-  test-buildpack:
-    runs-on: ubuntu-latest  # Uses GitHub-hosted runner with Docker pre-installed
+  build-and-package:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup Java for Gradle (if your ETL requires specific Java versions)
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'  # Automatically caches dependencies for speed
-       
-      # NEW STEP: Generates the missing gradlew file on the runner
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper    
-
-      # 2. Test Artifact Creation
-      - name: Build Artifacts (Zip/Tar)
-        run: ./gradlew assemble
-    
-      # 3. Build OCI Image (Step-by-Step without Dockerfile)
-      - name: Build OCI Image with Buildah
+      # Step 1: Generate Enterprise ZIP Artifact
+      - name: Build Gradle Artifact
         run: |
-          # 1. Initialize container from Red Hat UBI
-          container=$(buildah from registry.access.redhat.com)
-          
-          # 2. Copy source into the container
-          buildah copy "$container" . /workspace
-          buildah config --workingdir /workspace "$container"
-          
-          # 3. Execute Buildpack logic (Separate RUN commands)
-          buildah run "$container" chmod +x bin/detect bin/build
-          buildah run "$container" ./bin/detect
-          buildah run "$container" ./bin/build
-          
-          # 4. Set Runtime Configuration
-          buildah config --entrypoint '["/bin/ksh", "/workspace/bin/sample_etl.ksh"]' "$container"
-          
-          # 5. Commit to a permanent image
-          buildah commit "$container" etl-component:latest
-          echo "Image built successfully: etl-component:latest"
-
-      # 4. Upload Outputs
+          gradle wrapper
+          ./gradlew assemble
+      
+      # Step 2: Upload ZIP for Manual Download
       - name: Upload ZIP Package
         uses: actions/upload-artifact@v4
         with:
-          name: etl-zip-package
+          name: etl-components-zip
           path: build/distributions/*.zip
+
+      # Step 3: Build OCI Image using Kaniko (No Push)
+      # For enterprise use, replace --no-push with your registry destination
+      - name: Build OCI Image with Kaniko
+        uses: aevea/action-kaniko@master
+        with:
+          image: etl-component
+          tag: latest
+          extra_args: "--no-push --cache=true" # Enable caching for speed
