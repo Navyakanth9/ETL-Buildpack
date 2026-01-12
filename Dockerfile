@@ -1,5 +1,5 @@
 # Use Red Hat UBI 8 for OpenShift compatibility
-FROM registry.access.redhat.com
+FROM docker://registry.access.redhat.com
 
 # Define build context
 WORKDIR /workspace
